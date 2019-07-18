@@ -162,14 +162,16 @@ emacs_value egit_status_foreach_ext(emacs_env *env, emacs_value _repo,
     else if (!em_setflags_list(&options.flags, env, flags, true, em_setflag_status_opt))
         return esym_nil;
 
-    if (!egit_strarray_from_list(&options.pathspec, env, pathspec))
+    if (EM_EXTRACT_BOOLEAN(pathspec))
+      if (!egit_strarray_from_list(&options.pathspec, env, pathspec))
         return esym_nil;
 
     git_repository *repo = EGIT_EXTRACT(_repo);
     egit_generic_payload ctx = {.env = env, .func = function};
 
     int rv = git_status_foreach_ext(repo, &options, &foreach_callback, (void *)(&ctx));
-    egit_strarray_dispose(&options.pathspec);
+    if (EM_EXTRACT_BOOLEAN(pathspec))
+      egit_strarray_dispose(&options.pathspec);
 
     if (rv != GIT_EUSER) {
         EGIT_CHECK_ERROR(rv);
